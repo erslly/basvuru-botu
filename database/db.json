@@ -1,13 +1,6 @@
 {
   "guilds": {
-    "1383180312372314213": {
-      "applicationChannelId": "1383180312925831240",
-      "managementChannelId": "1383182516558495826",
-      "position": "31",
-      "description": "31",
-      "setupBy": "815668704435896321",
-      "setupAt": "2025-07-23T15:08:37.167Z"
-    }
+    "1383180312372314213": {}
   },
   "applications": {}
 }
