@@ -1,20 +1,6 @@
 const { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const dbPath = path.join(__dirname, '..', 'database', 'db.json');
-
-function readDB() {
-    try {
-        return JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-    } catch (error) {
-        return { guilds: {}, applications: {} };
-    }
-}
-
-function writeDB(data) {
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-}
+const { Database } = require('metusbase');
+const db = new Database('db.json');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -46,8 +32,7 @@ module.exports = {
         }
 
         else if (interaction.isButton()) {
-            const db = readDB();
-            const guildSettings = db.guilds[interaction.guildId];
+            const guildSettings = db.get('guilds.'+interaction.guildId);
             
             if (!guildSettings) {
                 return interaction.reply({ 
@@ -61,7 +46,8 @@ module.exports = {
                 const now = Date.now();
                 let lastApplicationTime = null;
                 let lastApplicationId = null;
-                for (const [id, app] of Object.entries(db.applications)) {
+                const applications = db.getAll('applications');
+                for (const [id, app] of Object.entries(applications)) {
                     if (app.guildId === interaction.guildId && app.userId === userId) {
                         if (!lastApplicationTime || new Date(app.timestamp).getTime() > lastApplicationTime) {
                             lastApplicationTime = new Date(app.timestamp).getTime();
@@ -143,10 +129,10 @@ module.exports = {
 
                 const [action, ...idParts] = interaction.customId.split('_');
                 const applicationId = idParts.join('_');
-                const application = db.applications[applicationId];
+                const application = db.get('applications.'+applicationId);
                 
                 if (!application) {
-                    console.error(`Başvuru bulunamadı! ID: ${applicationId}, db.applications:`, db.applications);
+                    console.error(`Başvuru bulunamadı! ID: ${applicationId}, db.applications:`, db.getAll('applications'));
                     return interaction.reply({ 
                         content: 'Başvuru bulunamadı', 
                         ephemeral: true 
@@ -219,15 +205,13 @@ module.exports = {
                     }
                 }
 
-                delete db.applications[applicationId];
-                writeDB(db);
+                db.delete('applications.'+applicationId);
             }
         }
 
         else if (interaction.isModalSubmit()) {
             if (interaction.customId === 'application_modal') {
-                const db = readDB();
-                const guildSettings = db.guilds[interaction.guildId];
+                const guildSettings = db.get('guilds.'+interaction.guildId);
                 
                 if (!guildSettings) {
                     return interaction.reply({ 
@@ -243,7 +227,7 @@ module.exports = {
                 const additional = interaction.fields.getTextInputValue('additional_input') || 'Belirtilmemiş';
                 const applicationId = `${interaction.guildId}_${interaction.user.id}_${Date.now()}`;
 
-                db.applications[applicationId] = {
+                db.set('applications.'+applicationId, {
                     id: applicationId,
                     guildId: interaction.guildId,
                     userId: interaction.user.id,
@@ -254,9 +238,7 @@ module.exports = {
                     why: why,
                     additional: additional,
                     timestamp: new Date().toISOString()
-                };
-
-                writeDB(db);
+                });
 
                 const applicationEmbed = new EmbedBuilder()
                     .setColor(0x0099FF)

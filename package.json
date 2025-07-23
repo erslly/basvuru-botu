@@ -13,6 +13,7 @@
   "type": "commonjs",
   "dependencies": {
     "discord.js": "^14.21.0",
-    "dotenv": "^17.2.0"
+    "dotenv": "^17.2.0",
+    "metusbase": "^2.0.1"
   }
 }

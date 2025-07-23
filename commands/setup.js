@@ -1,20 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits, ChannelType } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const dbPath = path.join(__dirname, '..', 'database', 'db.json');
-
-function readDB() {
-    try {
-        return JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-    } catch (error) {
-        return { guilds: {}, applications: {} };
-    }
-}
-
-function writeDB(data) {
-    fs.writeFileSync(dbPath, JSON.stringify(data, null, 2));
-}
+const { Database } = require('metusbase');
+const db = new Database('db.json');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -57,7 +43,7 @@ module.exports = {
         const requiredPermissions = ['SendMessages', 'EmbedLinks', 'UseExternalEmojis'];
         
         for (const permission of requiredPermissions) {
-            if (!applicationChannel.permissionsFor(botMember).has(permission)) {
+            if (!applicationChannel.permissionsFor(botMember).has(permission)) {    
                 return interaction.reply({
                     content: `Botun ${applicationChannel} kanalında \`${permission}\` iznine ihtiyacı var`,
                     ephemeral: true
@@ -71,16 +57,22 @@ module.exports = {
             }
         }
 
-        const db = readDB();
-        db.guilds[interaction.guildId] = {
+        const guildData = db.get('guilds.'+interaction.guildId);
+        if (guildData) {
+            return interaction.reply({
+                content: 'Bu sunucu için zaten kurulum yapılmış.',
+                ephemeral: true
+            });
+        }
+
+        db.set('guilds.'+interaction.guildId, {
             applicationChannelId: applicationChannel.id,
             managementChannelId: managementChannel.id,
             position: position,
             description: description,
             setupBy: interaction.user.id,
             setupAt: new Date().toISOString()
-        };
-        writeDB(db);
+        });
 
         const applicationEmbed = new EmbedBuilder()
             .setColor(0x5865F2)
