@@ -14,7 +14,7 @@ Discord sunucuları için başvuru sistemi sağlar. Kullanıcılar belirlenen ka
    ```
 3. Botu başlat:
    ```
-   node index.js
+   npm start
    ```
 
 ## Kullanım
